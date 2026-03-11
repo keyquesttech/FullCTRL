@@ -9,6 +9,7 @@ MEMORY
 }
 
 ENTRY(Reset_Handler)
+PROVIDE(_estack = ORIGIN(RAM) + LENGTH(RAM));
 
 SECTIONS
 {

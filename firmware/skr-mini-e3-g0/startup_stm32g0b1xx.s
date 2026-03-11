@@ -2,6 +2,7 @@
     .cpu cortex-m0plus
     .thumb
 
+    .global Reset_Handler
     .extern main
 
     .section .isr_vector, "a", %progbits
