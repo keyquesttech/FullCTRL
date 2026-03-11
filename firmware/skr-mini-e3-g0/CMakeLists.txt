@@ -9,6 +9,7 @@ add_executable(fullctrl_skr_mini_e3_g0
     startup_stm32g0b1xx.s
     src/main.c
     src/board.c
+    src/syscalls.c
 )
 
 target_include_directories(fullctrl_skr_mini_e3_g0 PRIVATE
