@@ -11,5 +11,10 @@ mkdir -p "${BUILD_DIR}"
 cmake -S "${FW_DIR}" -B "${BUILD_DIR}" -DCMAKE_TOOLCHAIN_FILE="${FW_DIR}/toolchain-arm-none-eabi.cmake"
 cmake --build "${BUILD_DIR}"
 
+# Convert ELF to binary for flashing.
+ELF="${BUILD_DIR}/fullctrl_skr_mini_e3_g0"
+BIN="${BUILD_DIR}/fullctrl_skr_mini_e3_g0.bin"
+arm-none-eabi-objcopy -O binary "${ELF}" "${BIN}"
+
 echo "Firmware build complete. Output is in: ${BUILD_DIR}"
 

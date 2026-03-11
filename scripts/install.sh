@@ -15,7 +15,8 @@ sudo apt-get install -y \
   git \
   nginx \
   gcc-arm-none-eabi make cmake \
-  libusb-1.0-0-dev
+  libusb-1.0-0-dev \
+  dfu-util
 
 echo "Setting up Python virtual environment..."
 python3 -m venv "${REPO_DIR}/.venv"
