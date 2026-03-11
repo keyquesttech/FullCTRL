@@ -16,5 +16,10 @@ ELF="${BUILD_DIR}/fullctrl_skr_mini_e3_g0"
 BIN="${BUILD_DIR}/fullctrl_skr_mini_e3_g0.bin"
 arm-none-eabi-objcopy -O binary "${ELF}" "${BIN}"
 
+# Copy to firmware.bin for SD-card flashing (BTT bootloader expects this name).
+cp "${BIN}" "${BUILD_DIR}/firmware.bin"
+
 echo "Firmware build complete. Output is in: ${BUILD_DIR}"
+echo "  - ${BIN}"
+echo "  - ${BUILD_DIR}/firmware.bin  (copy this to SD card root to flash)"
 
