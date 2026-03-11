@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 
 from host.core.config import ConfigManager
@@ -6,6 +6,7 @@ from host.core.printer_state import PrinterStateManager
 from host.core.serial_link import SerialLinkManager
 from host.core.jobs import JobManager
 from host.core.motion import MotionPlanner
+from host.core.protocol import Frame, encode_frame
 
 
 def create_app() -> FastAPI:
@@ -37,6 +38,30 @@ def create_app() -> FastAPI:
     @app.get("/api/printer/state")
     async def get_printer_state():
         return printer_state.snapshot()
+
+    @app.post("/api/debug/ping")
+    async def debug_ping():
+        """
+        Send a minimal ping frame over the serial link.
+
+        This is useful for verifying that the Pi can talk to the SKR once
+        firmware-side handling is in place.
+        """
+        try:
+            serial_link.connect()
+        except Exception as exc:  # pragma: no cover - thin wrapper around serial
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+        frame = Frame(msg_type=0x01, seq=1, payload=b"PING")
+        encoded = encode_frame(frame)
+        try:
+            serial_link.send(encoded)
+        except Exception as exc:  # pragma: no cover
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+        # For now we do not require a response; this endpoint only confirms
+        # that sending does not raise an exception.
+        return {"status": "sent", "bytes": len(encoded)}
 
     @app.post("/api/printer/command/home")
     async def home_all_axes():

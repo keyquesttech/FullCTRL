@@ -4,6 +4,10 @@ from dataclasses import dataclass
 from threading import Lock
 from typing import Optional
 
+import glob
+
+import serial  # type: ignore[import-untyped]
+
 
 @dataclass
 class SerialSettings:
@@ -26,22 +30,40 @@ class SerialLinkManager:
         self.settings = settings or SerialSettings()
         self._lock = Lock()
         self._connected = False
+        self._ser: Optional[serial.Serial] = None
 
     def connect(self) -> None:
         """
         Establish a connection to the SKR board.
 
-        This is a placeholder; in a full implementation this would probe
-        for USB serial devices, choose the correct one, and open it.
+        If a port is specified in settings, that is used directly.
+        Otherwise this will attempt to auto-detect a suitable USB CDC
+        device using common patterns (/dev/ttyACM*, /dev/ttyUSB*).
         """
         with self._lock:
-            # TODO: implement real serial discovery and connection.
+            if self._connected and self._ser is not None and self._ser.is_open:
+                return
+
+            port = self.settings.port
+            if port is None:
+                candidates = glob.glob("/dev/ttyACM*") + glob.glob("/dev/ttyUSB*")
+                if not candidates:
+                    raise RuntimeError("No serial candidates found (ttyACM*/ttyUSB*).")
+                port = candidates[0]
+
+            self._ser = serial.Serial(
+                port=port,
+                baudrate=self.settings.baudrate,
+                timeout=self.settings.timeout_s,
+            )
             self._connected = True
 
     def disconnect(self) -> None:
         """Close the connection, if any."""
         with self._lock:
-            # TODO: close the underlying serial port.
+            if self._ser is not None and self._ser.is_open:
+                self._ser.close()
+            self._ser = None
             self._connected = False
 
     def is_connected(self) -> bool:
@@ -54,11 +76,10 @@ class SerialLinkManager:
 
         Higher-level code is responsible for encoding protocol frames.
         """
-        if not self.is_connected():
-            raise RuntimeError("Serial link is not connected.")
-
-        # TODO: write to underlying serial port.
-        _ = payload  # placeholder to keep linters quiet
+        with self._lock:
+            if not self._connected or self._ser is None or not self._ser.is_open:
+                raise RuntimeError("Serial link is not connected.")
+            self._ser.write(payload)
 
     def receive(self, max_bytes: int = 4096) -> bytes:
         """
@@ -66,10 +87,8 @@ class SerialLinkManager:
 
         This will be replaced by an event-driven reader in the future.
         """
-        if not self.is_connected():
-            raise RuntimeError("Serial link is not connected.")
-
-        # TODO: read from underlying serial port.
-        _ = max_bytes
-        return b""
+        with self._lock:
+            if not self._connected or self._ser is None or not self._ser.is_open:
+                raise RuntimeError("Serial link is not connected.")
+            return self._ser.read(max_bytes)
 

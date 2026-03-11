@@ -21,7 +21,7 @@ echo "Setting up Python virtual environment..."
 python3 -m venv "${REPO_DIR}/.venv"
 source "${REPO_DIR}/.venv/bin/activate"
 pip install --upgrade pip
-pip install fastapi uvicorn pyyaml
+pip install fastapi uvicorn pyyaml pyserial
 
 echo "Creating systemd service for backend..."
 sudo mkdir -p /etc/fullctrl
